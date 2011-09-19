@@ -25,3 +25,5 @@
 #define kFBGraphApiGetURL @"https://graph.facebook.com/%@?access_token=%@"
 
 #define kFBGraphApiPostURL @"https://graph.facebook.com/%@"
+
+#define kFBPermissions @"https://www.facebook.com/dialog/permissions.request"

@@ -120,7 +120,7 @@
     }
 
     res = [url compare: kFBLoginURL options: NSCaseInsensitiveSearch range: NSMakeRange(0, [kFBLoginURL length])];
-    if (res == NSOrderedSame)
+    if (res == NSOrderedSame || [url hasPrefix:kFBPermissions])
         [self showUI];
 
 #ifdef ALWAYS_SHOW_UI
