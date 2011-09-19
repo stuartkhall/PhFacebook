@@ -16,6 +16,8 @@
 #define kFBStoreTokenExpiry @"FBStoreTokenExpiry"
 #define kFBStoreAccessPermissions @"FBStoreAccessPermissions"
 
+static NSString* kStringBoundary = @"3i2ndDfv2rTHiSisAbouNdArYfORhtTPEefj3q2f";
+
 @implementation PhFacebook
 
 #pragma mark Initialization
@@ -170,6 +172,10 @@
     return [[_authToken.authenticationToken copy] autorelease];
 }
 
+- (void)utfAppendBody:(NSMutableData *)body data:(NSString *)data {
+    [body appendData:[data dataUsingEncoding:NSUTF8StringEncoding]];
+}
+
 - (void) sendFacebookRequest: (NSDictionary*) allParams
 {
     NSAutoreleasePool *pool = [NSAutoreleasePool new];
@@ -187,14 +193,50 @@
 
         
         NSDictionary *params = [allParams objectForKey: @"params"];
-        NSMutableString *strPostParams = nil;
+        NSMutableData *postParams = [NSMutableData data];
+        
+        
         if (params != nil) 
         {
             if (postRequest)
             {
-                strPostParams = [NSMutableString stringWithFormat: @"access_token=%@", _authToken.authenticationToken];
-                for (NSString *p in [params allKeys]) 
-                    [strPostParams appendFormat: @"&%@=%@", p, [params objectForKey: p]];
+                NSString *endLine = [NSString stringWithFormat:@"\r\n--%@\r\n", kStringBoundary];
+                
+                // Start of post body
+                [self utfAppendBody:postParams data:[NSString stringWithFormat:@"--%@\r\n", kStringBoundary]];
+                
+                // Auth Token
+                [self utfAppendBody:postParams
+                               data:[NSString
+                                     stringWithFormat:@"Content-Disposition: form-data; name=\"%@\"\r\n\r\n",
+                                     @"access_token"]];
+                [self utfAppendBody:postParams data:_authToken.authenticationToken];
+                [self utfAppendBody:postParams data:endLine];
+                
+                for (NSString *p in [params allKeys]) {
+                    id dataParam = [params objectForKey:p];
+                    if ([dataParam isKindOfClass:[NSImage class]]) {
+                        // Image
+                        NSBitmapImageRep *bitmap = [[(NSImage*)dataParam representations] objectAtIndex:0];
+                        NSData* imageData = [bitmap representationUsingType:NSPNGFileType properties: nil];
+                        [self utfAppendBody:postParams
+                                       data:[NSString stringWithFormat:
+                                             @"Content-Disposition: form-data; filename=\"%@\"\r\n", p]];
+                        [self utfAppendBody:postParams
+                                       data:[NSString stringWithString:@"Content-Type: image/png\r\n\r\n"]];
+                        [postParams appendData:imageData];
+                        [self utfAppendBody:postParams data:endLine];
+                    } 
+                    else {
+                        //[postParams appendData:[[NSString stringWithFormat:@"&%@=%@", p, dataParam] dataUsingEncoding:NSUTF8StringEncoding]];
+                        [self utfAppendBody:postParams
+                                       data:[NSString
+                                             stringWithFormat:@"Content-Disposition: form-data; name=\"%@\"\r\n\r\n",
+                                             p]];
+                        [self utfAppendBody:postParams data:dataParam];
+                        [self utfAppendBody:postParams data:endLine];
+                    }
+                }
             }
             else
             {
@@ -209,10 +251,12 @@
         
         if (postRequest)
         {
-            NSData *requestData = [NSData dataWithBytes: [strPostParams UTF8String] length: [strPostParams length]];
             [req setHTTPMethod: @"POST"];
-            [req setHTTPBody: requestData];
+            [req setHTTPBody: postParams];
             [req setValue: @"application/x-www-form-urlencoded" forHTTPHeaderField: @"content-type"];
+            NSString* contentType = [NSString
+                                     stringWithFormat:@"multipart/form-data; boundary=%@", kStringBoundary];
+            [req setValue:contentType forHTTPHeaderField:@"Content-Type"];
         }
         
         NSURLResponse *response = nil;
