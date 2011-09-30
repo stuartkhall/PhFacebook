@@ -41,6 +41,9 @@
 - (void) webViewWillShowUI;
 - (void) didDismissUI;
 
++ (void)invalidateCachedToken;
++ (BOOL)hasStoredCachedToken;
+
 @end
 
 @protocol PhFacebookDelegate
