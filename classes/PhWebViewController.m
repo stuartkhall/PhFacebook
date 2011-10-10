@@ -131,7 +131,7 @@
 - (IBAction) cancel: (id) sender
 {
     [parent performSelector: @selector(didDismissUI)];
-    [self.window orderOut: nil];
+    //[self.window orderOut: nil];
 }
 
 @end
