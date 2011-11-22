@@ -64,6 +64,14 @@
 {
     NSString *url = [sender mainFrameURL];
     DebugLog(@"didCommitLoadForFrame: {%@}", url);
+    
+    if ([url hasPrefix:@"http://www.facebook.com/index.php?lh="]) {
+        // Logout?
+        NSString* authURL = [NSString stringWithFormat: kFBAuthorizeURL, parent._appID, kFBLoginSuccessURL];
+        [webView stopLoading:self];
+        [webView setMainFrameURL: authURL];
+        return;
+    }
 
     NSString *urlWithoutSchema = [url substringFromIndex: [@"http://" length]];
     if ([url hasPrefix: @"https://"])
@@ -122,6 +130,9 @@
     res = [url compare: kFBLoginURL options: NSCaseInsensitiveSearch range: NSMakeRange(0, [kFBLoginURL length])];
     if (res == NSOrderedSame || [url hasPrefix:kFBPermissions])
         [self showUI];
+    
+    // Remove any open in new tabs
+    [sender stringByEvaluatingJavaScriptFromString:@"links = document.getElementsByTagName('a'); for (i=0; i<links.length; i++) { links[i].target='_self';}"];
 
 #ifdef ALWAYS_SHOW_UI
     [self showUI];
@@ -131,7 +142,7 @@
 - (IBAction) cancel: (id) sender
 {
     [parent performSelector: @selector(didDismissUI)];
-    //[self.window orderOut: nil];
+    [self.window orderOut: nil];
 }
 
 @end

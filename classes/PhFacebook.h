@@ -13,13 +13,15 @@
 
 @interface PhFacebook : NSObject
 {
-@private
     NSString *_appID;
+@private
     id _delegate;
     PhWebViewController *_webViewController;
     PhAuthenticationToken *_authToken;
     NSString *_permissions;
 }
+
+@property (nonatomic, retain) NSString *_appID;
 
 - (id) initWithApplicationID: (NSString*) appID delegate: (id) delegate;
 

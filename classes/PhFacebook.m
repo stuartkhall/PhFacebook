@@ -19,6 +19,7 @@
 static NSString* kStringBoundary = @"3i2ndDfv2rTHiSisAbouNdArYfORhtTPEefj3q2f";
 
 @implementation PhFacebook
+@synthesize _appID;
 
 #pragma mark Initialization
 
@@ -27,7 +28,7 @@ static NSString* kStringBoundary = @"3i2ndDfv2rTHiSisAbouNdArYfORhtTPEefj3q2f";
     if ((self = [super init]))
     {
         if (appID)
-            _appID = [[NSString stringWithString: appID] retain];
+            self._appID = [NSString stringWithString: appID];
         _delegate = delegate; // Don't retain delegate to avoid retain cycles
         _webViewController = nil;
         _authToken = nil;
@@ -249,8 +250,10 @@ static NSString* kStringBoundary = @"3i2ndDfv2rTHiSisAbouNdArYfORhtTPEefj3q2f";
                     id dataParam = [params objectForKey:p];
                     if ([dataParam isKindOfClass:[NSImage class]]) {
                         // Image
-                        NSBitmapImageRep *bitmap = [[(NSImage*)dataParam representations] objectAtIndex:0];
-                        NSData* imageData = [bitmap representationUsingType:NSPNGFileType properties: nil];
+                        NSBitmapImageRep *imageRep = [NSBitmapImageRep imageRepWithData:[dataParam TIFFRepresentation]];
+                        NSDictionary *imageProps = [NSDictionary dictionaryWithObject:[NSNumber numberWithFloat:1.0] forKey:NSImageCompressionFactor];
+                        NSData* imageData = [imageRep representationUsingType:NSJPEGFileType properties:imageProps];
+
                         [self utfAppendBody:postParams
                                        data:[NSString stringWithFormat:
                                              @"Content-Disposition: form-data; filename=\"%@\"\r\n", p]];
